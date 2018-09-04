@@ -2,7 +2,7 @@
 -- it's just a modified version of the standard animation script that plays a little more nicely with the character controller
 
 local function getCustomAnimations(id, animParent)
-	local model = game.Players:GetCharacterAppearanceAsync(id)
+	local model = game.Players:GetCharacterAppearanceAsync(id);
 	local assets = model:GetChildren();
 	for i = 1, #assets do
 		if (assets[i].Name == "R15Anim") then
@@ -25,7 +25,7 @@ if (script.Parent:WaitForChild("Humanoid").RigType == Enum.HumanoidRigType.R15) 
 	-- if you don't want custom animations then comment this out
 	local userId = game.Players.LocalPlayer.UserId;
 	if (userId > -1) then
-		getCustomAnimations(game.Players.LocalPlayer.UserId, script);
+		getCustomAnimations(game.Players.LocalPlayer.UserId, script.R15);
 	end
 	
 	local Character = script.Parent

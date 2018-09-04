@@ -41,6 +41,17 @@ local function setModelTransparency(model, transparency)
 	end
 end
 
+local function getModelMass(model)
+	local mass = 0;
+	for k, v in next, model:GetChildren() do
+		if (v:IsA("BasePart")) then
+			mass = mass + v:GetMass();
+		end
+		mass = mass + getModelMass(v);
+	end
+	return mass;
+end
+
 -- public constructor
 
 function controller.new(character)
@@ -76,6 +87,7 @@ function controller.new(character)
 	self.isEnabled = false;
 	self.isR15 = (self.humanoid.RigType == Enum.HumanoidRigType.R15);
 	self.height = (self.isR15 and self.humanoid.HipHeight + self.hrp.Size.y/2 or 3);
+	self.fallTime = 1;
 	
 	--
 	self.world = game.Workspace.World;
@@ -105,6 +117,29 @@ function controller.new(character)
 	
 	self.physHumanoid.Died:Connect(function()
 		self.humanoid.Health = 0;
+	end)
+	
+	self.humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+		self.physHumanoid.WalkSpeed = self.humanoid.WalkSpeed;
+	end)
+	
+	self.humanoid:GetPropertyChangedSignal("JumpPower"):Connect(function()
+		self.physHumanoid.JumpPower = self.humanoid.JumpPower;
+	end)
+	
+	local fallCount = 0;
+	local cmass = getModelMass(self.physCharacter);
+	self.physHumanoid.StateChanged:Connect(function(old, new)
+		if (new == Enum.HumanoidStateType.Freefall) then
+			fallCount = fallCount + 1;
+			if (self.fallTime ~= math.huge) then
+				local current = fallCount;
+				wait(self.fallTime);
+				if (fallCount == current and self.physHumanoid:GetState() == Enum.HumanoidStateType.Freefall) then
+					controller.setNormal(self, Vector3.new(0, 1, 0), CFrame.new());
+				end
+			end
+		end
 	end)
 	
 	--
@@ -244,7 +279,7 @@ end
 function controller:setNormal(normal, extraRotation)
 	self:setPart(terrain, normal, extraRotation);
 end	
-	
+
 function controller:autoRotate(dt)
 	debugger.step();
 	if not (self.isEnabled) then
@@ -259,7 +294,7 @@ function controller:autoRotate(dt)
 	if (hit and (hit ~= private.lastHit or (normal:Dot(private.lastNormal) < 0.99 and hit.Name ~= "rPart") or (oneHit and not isComplex and private.lastNormal:Dot(normal) < 0.9999 and hit.Name ~= "rPart"))) then
 		self:setPart(hit, normal, CFrame.new());
 	end
-		
+	
 	self:updateFakeWorld(filter);
 	self:updateCharacter(self.humanoid.MoveDirection);
 end
